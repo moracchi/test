@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>けんちゃんの右か左かどっちかな？</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    #points {
+      font-size: 1.2em;
+      margin: 10px;
+    }
+    /* 掛けるポイント選択エリア */
+    #bet {
+      margin: 20px auto;
+      width: 300px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    #betDisplay {
+      font-size: 2em;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background-color: #e9e9e9;
+    }
+    #keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    #keypad button {
+      padding: 15px;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+    /* ゲームエリア */
+    #gameArea {
+      margin: 20px auto;
+      width: 600px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    .box-container {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+    .box {
+      width: 200px;
+      height: 200px;
+      border: 2px solid #333;
+      border-radius: 10px;
+      line-height: 200px;
+      font-size: 1.5em;
+      background-color: #ccc;
+      position: relative;
+    }
+    .box.open {
+      background-color: #ffeb3b;
+    }
+    .box .content {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      line-height: 200px;
+      font-size: 2em;
+      color: #333;
+    }
+    .box.open .content {
+      display: block;
+    }
+    .buttons button {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin: 0 20px;
+      cursor: pointer;
+    }
+    /* 結果表示エリア */
+    #result {
+      margin: 20px auto;
+      width: 400px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    #resultMessage {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+    }
+    #nextRound {
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>けんちゃんの右か左かどっちかな？</h1>
+  <div id="points">所持ポイント: 10</div>
+
+  <!-- 掛けるポイント入力エリア（ソフトキーボード付き） -->
+  <div id="bet">
+    <p>掛けるポイントを選んでください：</p>
+    <div id="betDisplay">0</div>
+    <div id="keypad">
+      <button class="num-key" data-value="1">1</button>
+      <button class="num-key" data-value="2">2</button>
+      <button class="num-key" data-value="3">3</button>
+      <button class="num-key" data-value="4">4</button>
+      <button class="num-key" data-value="5">5</button>
+      <button class="num-key" data-value="6">6</button>
+      <button class="num-key" data-value="7">7</button>
+      <button class="num-key" data-value="8">8</button>
+      <button class="num-key" data-value="9">9</button>
+      <button id="clear">クリア</button>
+      <button class="num-key" data-value="0">0</button>
+      <button id="enter">決定</button>
+    </div>
+  </div>
+
+  <!-- ゲームエリア -->
+  <div id="gameArea" style="display:none;">
+    <p id="message">右か左かどっちかな？</p>
+    <div class="box-container">
+      <div class="box" id="leftBox">
+        左の箱
+        <div class="content"></div>
+      </div>
+      <div class="box" id="rightBox">
+        右の箱
+        <div class="content"></div>
+      </div>
+    </div>
+    <div class="buttons">
+      <button id="chooseLeft">左を選ぶ</button>
+      <button id="chooseRight">右を選ぶ</button>
+    </div>
+  </div>
+
+  <!-- 結果表示エリア -->
+  <div id="result" style="display:none;">
+    <p id="resultMessage"></p>
+    <button id="nextRound">次のラウンド</button>
+  </div>
+
+  <script>
+    let currentPoints = 10;
+    let currentBet = 0;
+    const pointsDisplay = document.getElementById('points');
+    const betDisplay = document.getElementById('betDisplay');
+    const betSection = document.getElementById('bet');
+    const keypadButtons = document.querySelectorAll('.num-key');
+    const clearButton = document.getElementById('clear');
+    const enterButton = document.getElementById('enter');
+    const gameArea = document.getElementById('gameArea');
+    const message = document.getElementById('message');
+    const leftBox = document.getElementById('leftBox');
+    const rightBox = document.getElementById('rightBox');
+    const chooseLeft = document.getElementById('chooseLeft');
+    const chooseRight = document.getElementById('chooseRight');
+    const resultSection = document.getElementById('result');
+    const resultMessage = document.getElementById('resultMessage');
+    const nextRoundButton = document.getElementById('nextRound');
+
+    function updatePoints() {
+      pointsDisplay.textContent = "所持ポイント: " + currentPoints;
+    }
+
+    // ソフトキーボードの処理
+    keypadButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        let digit = button.getAttribute('data-value');
+        if (betDisplay.textContent === "0") {
+          betDisplay.textContent = digit;
+        } else {
+          betDisplay.textContent += digit;
+        }
+      });
+    });
+
+    clearButton.addEventListener('click', () => {
+      betDisplay.textContent = "0";
+    });
+
+    enterButton.addEventListener('click', () => {
+      currentBet = parseInt(betDisplay.textContent);
+      if (isNaN(currentBet) || currentBet <= 0) {
+        alert("正しいポイントを入力してください。");
+        return;
+      }
+      if (currentBet > currentPoints) {
+        alert("所持ポイントを超えています。");
+        return;
+      }
+      // 掛けるポイントが決定されたら入力エリアを隠し、ゲームエリアを表示
+      betSection.style.display = "none";
+      gameArea.style.display = "block";
+      resetBoxes();
+      message.textContent = "右か左かどっちかな？";
+    });
+
+    // 箱の状態をリセットする関数
+    function resetBoxes() {
+      leftBox.classList.remove('open');
+      rightBox.classList.remove('open');
+      leftBox.querySelector('.content').textContent = "";
+      rightBox.querySelector('.content').textContent = "";
+      chooseLeft.disabled = false;
+      chooseRight.disabled = false;
+    }
+
+    // 箱を選んだときのゲーム処理
+    function playRound(choice) {
+      chooseLeft.disabled = true;
+      chooseRight.disabled = true;
+
+      // 50%の確率でお菓子が入る
+      let win = Math.random() < 0.5;
+
+      // 選んだ箱を「開く」
+      if (choice === "left") {
+        leftBox.classList.add('open');
+        leftBox.querySelector('.content').textContent = win ? "お菓子！" : "ハズレ";
+      } else if (choice === "right") {
+        rightBox.classList.add('open');
+        rightBox.querySelector('.content').textContent = win ? "お菓子！" : "ハズレ";
+      }
+
+      // 箱が開いた後、結果を表示（少しの遅延を入れて演出）
+      setTimeout(() => {
+        if (win) {
+          // 当たりの場合、掛けたポイント分プラス
+          currentPoints += currentBet;
+          resultMessage.textContent = "おめでとう！お菓子が出た！ +" + currentBet + "ポイント";
+        } else {
+          // 外れの場合は、掛けたポイントを失う
+          currentPoints -= currentBet;
+          resultMessage.textContent = "残念！お菓子は出なかった。 -" + currentBet + "ポイント";
+        }
+        updatePoints();
+        gameArea.style.display = "none";
+        resultSection.style.display = "block";
+
+        // ゲームオーバーまたはゲームクリアの判定
+        if (currentPoints <= 0) {
+          resultMessage.textContent = "ゲームオーバー！所持ポイントがゼロになりました。";
+          nextRoundButton.style.display = "none";
+        } else if (currentPoints >= 30) {
+          resultMessage.textContent = "ゲームクリア！おめでとうございます！";
+          nextRoundButton.style.display = "none";
+        } else {
+          nextRoundButton.style.display = "inline-block";
+        }
+      }, 1000);
+    }
+
+    chooseLeft.addEventListener('click', () => {
+      playRound("left");
+    });
+
+    chooseRight.addEventListener('click', () => {
+      playRound("right");
+    });
+
+    nextRoundButton.addEventListener('click', () => {
+      // 次のラウンドの準備：入力エリアに戻す
+      betDisplay.textContent = "0";
+      betSection.style.display = "block";
+      resultSection.style.display = "none";
+    });
+  </script>
+</body>
+</html>
